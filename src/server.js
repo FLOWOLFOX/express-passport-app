@@ -14,6 +14,21 @@ app.use(cookieSession({
   keys: [cookieEncryptionKey]
 }));
 
+// register regenerate & save after the cookieSession middleware initialization
+app.use(function(req, res, next) {
+  if(req.session && !req.session.regenerate) {
+    req.session.regenerate = (cb) => {
+      cb();
+    }
+  }
+  if(req.session && !req.session.save) {
+    req.session.save = (cb) => {
+      cb();
+    }
+  }
+  next();
+})
+
 app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport');
@@ -85,6 +100,17 @@ app.post('/signup', async (req, res) => {
     console.error(error);
   }
 })
+
+app.get('/auth/google', passport.authenticate('google'));
+app.get('/auth/google/callback', passport.authenticate('google', {
+  successReturnToOrRedirect: '/',
+  failureRedirect: '/login'
+}));
+
+// const config = require('../config/default.json');
+// const config = require('config');
+// const serverConfig = config.get('server');
+// const cookieConfig = config.get('cookie');
 
 const port = 4000;
 app.listen(port, () => {

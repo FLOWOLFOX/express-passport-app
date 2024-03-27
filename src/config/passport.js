@@ -64,25 +64,26 @@ const localStrategyConfig = new LocalStrategy({ usernameField: 'email', password
         return done(err);
       })
   }
-)
+);
 passport.use('local', localStrategyConfig);
-  
 
-/*
+const googleClientID = '1033781109153-knqn7ahndtm08810ci464kauf5qs163l.apps.googleusercontent.com';
+const googleClientSecret = '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';
+
 const googleStrategyConfig = new GoogleStrategy({
     clientID: googleClientID, 
     clientSecret: googleClientSecret, 
-    callbackURL: "/auth/google/callback", 
-    scope: ["email", "profile"],
+    callbackURL: '/auth/google/callback', 
+    scope: ['email', 'profile'],
 	},
 	async(accessToken, refreshToken, profile, done) => {
 		try {
-			const existingUser = await User.findOne({ googleId: profile.id });
+			let existingUser = await User.findOne({ googleId: profile.id });
 			if (existingUser) {
 				return done (null, existingUser);
 			} else {
 				const user = new User({
-					email: profile.emails[0].value, googleId: profile.id,
+					email: profile.emails[0].value, googleId: profile.id
 				});
 				await (user.save); 
 				done (null, user);
@@ -92,7 +93,9 @@ const googleStrategyConfig = new GoogleStrategy({
     }
   }
 );
+passport.use('google', googleStrategyConfig);
 
+/*
 const kakaoStrategyConfig = new KakaoStrategy({
     clientID: process.env.KAKAO_CLIENT_ID, 
     callbackURL: "/auth/kakao/callback", 
