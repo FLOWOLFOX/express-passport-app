@@ -17,31 +17,6 @@ passport.deserializeUser((id, done) => {
     })
 });
 
-/*
-passport.use(new LocalStrategy({ usernameField: 'email', passwordField: 'password' },
-  (email, password, done) => {
-    User.findOne({
-      email: email.toLocaleLowerCase()
-    }, (err, user) => {
-      if(err) return done(err);
-
-      if(!user) {
-        return done(null, false, { msg: `Email ${email} not found` });
-      }
-
-      user.comparePassword(password, (err, isMatch) => {
-        if(err) return done(err);
-
-        if(isMatch) {
-          return done(null, user);
-        }
-        return done(null, false, { msg: 'Invalid email or password.' });
-      })
-    })
-  }
-))
-*/
-
 const localStrategyConfig = new LocalStrategy({ usernameField: 'email', passwordField: 'password' },
   (email, password, done) => {
     User.findOne({ email: email.toLocaleLowerCase() })
@@ -67,26 +42,30 @@ const localStrategyConfig = new LocalStrategy({ usernameField: 'email', password
 );
 passport.use('local', localStrategyConfig);
 
-const googleClientID = '1033781109153-knqn7ahndtm08810ci464kauf5qs163l.apps.googleusercontent.com';
-const googleClientSecret = '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';
-
 const googleStrategyConfig = new GoogleStrategy({
-    clientID: googleClientID, 
-    clientSecret: googleClientSecret, 
+    clientID: process.env.GOOGLE_CLIENT_ID, 
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET, 
     callbackURL: '/auth/google/callback', 
     scope: ['email', 'profile'],
 	},
 	async(accessToken, refreshToken, profile, done) => {
 		try {
-			let existingUser = await User.findOne({ googleId: profile.id });
+			const existingUser = await User.findOne({ googleId: profile.id });
 			if (existingUser) {
 				return done (null, existingUser);
 			} else {
 				const user = new User({
 					email: profile.emails[0].value, googleId: profile.id
 				});
-				await (user.save); 
-				done (null, user);
+        await user.save()
+          .then(() => {
+            done(null, user);
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+				// await (user.save);
+        // done (null, user);
 			}
 		} catch (error) {
 			return done(error);
@@ -95,10 +74,9 @@ const googleStrategyConfig = new GoogleStrategy({
 );
 passport.use('google', googleStrategyConfig);
 
-/*
 const kakaoStrategyConfig = new KakaoStrategy({
-    clientID: process.env.KAKAO_CLIENT_ID, 
-    callbackURL: "/auth/kakao/callback", 
+    clientID: process.env.KAKAO_CLIENT_ID,
+    callbackURL: "/auth/kakao/callback",
   }, async(accessToken, refreshToken, profile, done) => {
     try {
       const existingUser = await User.findOne({ kakaoId: profile.id });
@@ -108,14 +86,21 @@ const kakaoStrategyConfig = new KakaoStrategy({
         const user = new User();
         user.kakaoId = profile.id;
         user.email = profile._json.kakao_account.email;
-        user.save((err) => {
-          if(err) { return done(err); }
-          done (null, user);
-        })
+        await user.save()
+          .then(() => {
+            done(null, user);
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+      //   user.save((err) => {
+      //     if(err) { return done(err); }
+      //     done (null, user);
+      //   })
       }
     } catch (error) {
       return done(error);
     }
   }
 );
-*/
+passport.use('kakao', kakaoStrategyConfig);
